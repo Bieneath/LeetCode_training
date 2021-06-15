@@ -1,0 +1,110 @@
+# Kruskal + 并查集，Kruskal说白了就是对权值从小到大排序，用并查集检查是否能添加该边
+from itertools import product
+class Solution:
+    def minimumEffortPath(self, heights: List[List[int]]) -> int:
+        m, n = len(heights), len(heights[0])
+        edges = []
+        for i, j in product(range(m), range(n)):
+            if i+1 < m:
+                edges.append((abs(heights[i][j] - heights[i+1][j]), i*n+j, (i+1)*n+j))
+            if j+1 < n:
+                edges.append((abs(heights[i][j] - heights[i][j+1]), i*n+j, i*n+j+1))
+        edges = sorted(edges, key=lambda x:x[0])
+        ret = 0
+        f = {}
+        def find(x):
+            if x != f.setdefault(x, x):
+                f[x] = find(f[x])
+            return f[x]
+        for w, x, y in edges:
+            if find(x) != find(y):
+                ret = max(ret, w)
+                f[find(y)] = find(x)
+            if find(0) == find((m-1)*n+n-1): # 当发现起始点和终点同源后，就可以停止循环了。
+                break
+        return ret  
+
+# # 二分查找+BFS
+# from collections import deque
+# class Solution:
+#     def minimumEffortPath(self, heights: List[List[int]]) -> int:
+#         m, n = len(heights), len(heights[0])
+#         if m == n == 1: return 0
+#         left, right = 0, int(1e6)
+#         dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+#         # 二分查找部分
+#         def binary_search(left, right):
+#             while left <= right:
+#                 mid = left + ((right - left) >> 1)
+#                 if is_enough(mid):
+#                     right = mid - 1
+#                 else:
+#                     left = mid + 1
+#             return left # 草稿纸上推了一下，正好够的那个阈值会在left上
+#         # BFS检测部分
+#         def is_enough(remain): # 假设能消耗的值为remain
+#             dq = deque([(0, 0)])
+#             check = [[True] * n for _ in range(m)]
+#             check[0][0] = False
+#             while dq:
+#                 i, j = dq.popleft()
+#                 for u, v in dirs:
+#                     x, y = i+u, j+v
+#                     if 0 <= x < m and 0 <= y < n and check[x][y] and abs(heights[x][y] - heights[i][j]) <= remain:
+#                         if (x, y) == (m-1, n-1): return True
+#                         dq.append((x, y))
+#                         check[x][y] = False
+#             return False
+#         # 主函数
+#         return binary_search(left, right)
+
+# # 二分查找+并查集，其实用并查集作为检测手段，代码写起来更容易（速度超慢）
+# from itertools import product
+# class Solution:
+#     def minimumEffortPath(self, heights: List[List[int]]) -> int:
+#         m, n = len(heights), len(heights[0])
+#         if m == n == 1: return 0
+#         left, right = 0, int(1e6)
+#         def binary_search(left, right):
+#             while left <= right:
+#                 mid = left + ((right - left) >> 1)
+#                 if is_enough(mid):
+#                     right = mid - 1
+#                 else:
+#                     left = mid + 1
+#             return left
+#         def find(x, f):
+#             if x != f.setdefault(x, x):
+#                 f[x] = find(f[x], f)
+#             return f[x]
+#         def is_enough(remain):
+#             f = {}
+#             for i, j in product(range(m), range(n)):
+#                 if i+1 < m and abs(heights[i+1][j] - heights[i][j]) <= remain:
+#                     f[find((i+1, j), f)] = find((i, j), f)
+#                 if j+1 < n and abs(heights[i][j+1] - heights[i][j]) <= remain:
+#                     f[find((i, j+1), f)] = find((i, j), f)
+#             return find((0, 0), f) == find((m-1, n-1), f)
+#         return binary_search(left, right)
+
+# # BFS+DP；这题使用DP的核心是要使用BFS搜索！！！
+# from collections import deque
+# class Solution:
+#     def minimumEffortPath(self, heights: List[List[int]]) -> int:
+#         m, n = len(heights), len(heights[0])
+#         dp = [[math.inf] * n for _ in range(m)]
+#         dp[0][0] = 0
+#         dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+#         dq = deque([(0, 0)])
+#         while dq:
+#             i, j = dq.popleft()
+#             for u, v in dirs:
+#                 x, y = i+u, j+v
+#                 if 0 <= x < m and 0 <= y < n:
+#                     diff = abs(heights[x][y] - heights[i][j])
+#                     v = max(dp[i][j], diff)
+#                     # 这里是是否将x, y作为下一个探索节点的判断依据，只有当dp[x][y]能被刷新下限的情况下才去探索。
+#                     if dp[x][y] > v:
+#                         dp[x][y] = v
+#                         dq.append((x, y))
+#         return dp[-1][-1]

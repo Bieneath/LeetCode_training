@@ -1,0 +1,13 @@
+class Solution:
+    def shortestPalindrome(self, s: str) -> str:
+        if len(s) < 2: return s # 去掉s为空或者只有单个字符的情况
+        def isValid(le, ri):
+            return le[::-1] == ri
+        i = (len(s)+1) // 2 - 1
+        while i >= 0:
+            if s[i] == s[i+1] and isValid(s[:i], s[i+2:2*i+2]):
+                return s[2*i+2:][::-1] + s   
+            if isValid(s[:i], s[i+1:2*i+1]):
+                return s[2*i+1:][::-1] + s
+            i -= 1
+        # return s[2:][::-1] + s if s[0] == s[1] else s[1:][::-1] + s
